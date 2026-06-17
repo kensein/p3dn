@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Logo BMKG">
+  <defs>
+    <linearGradient id="bmkgSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0066CC"/>
+      <stop offset="1" stop-color="#0052A3"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#bmkgSky)"/>
+  <circle cx="50" cy="50" r="48" fill="none" stroke="#003366" stroke-width="3"/>
+  <!-- Matahari (meteorologi) -->
+  <circle cx="36" cy="34" r="11" fill="#F5A623"/>
+  <g stroke="#F5A623" stroke-width="2.4" stroke-linecap="round">
+    <line x1="36" y1="14" x2="36" y2="20"/>
+    <line x1="20" y1="34" x2="26" y2="34"/>
+    <line x1="22" y1="22" x2="26" y2="26"/>
+    <line x1="50" y1="22" x2="46" y2="26"/>
+  </g>
+  <!-- Awan (klimatologi) -->
+  <path d="M44 46c0-5 4-9 9-9 4 0 7 2 8 6 4 0 7 3 7 7s-3 7-7 7H46c-4 0-7-3-7-7 0-3 2-6 5-7z" fill="#E8F4FC"/>
+  <!-- Gelombang (geofisika) -->
+  <g stroke="#E8F4FC" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M16 70c5 0 5-6 10-6s5 6 10 6 5-6 10-6 5 6 10 6 5-6 10-6 5 6 10 6"/>
+    <path d="M16 82c5 0 5-6 10-6s5 6 10 6 5-6 10-6 5 6 10 6 5-6 10-6 5 6 10 6"/>
+  </g>
+</svg>

@@ -18,6 +18,20 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+
+    /* === Palet warna portal PSIMKG (P3DN) === */
+    --psimkg-navy: #0052a3;
+    --psimkg-blue: #0066cc;
+    --psimkg-light: #e8f4fc;
+    --psimkg-accent: #f5a623;
+    --psimkg-dark: #003366;
+    --psimkg-footer-bg: #0f172a;
+    --psimkg-footer-border: #334155;
+    --psimkg-footer-heading: #f6c453;
+
+    /* Font stack self-hosted (TIDAK memuat Google Fonts eksternal) */
+    --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, sans-serif;
   }
 }
 
@@ -25,9 +39,13 @@
   * {
     border-color: hsl(var(--border));
   }
+  html {
+    font-family: var(--font-sans);
+  }
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: var(--font-sans);
   }
 }
 

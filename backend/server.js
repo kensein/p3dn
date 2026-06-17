@@ -9,9 +9,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+const corsOrigin =
+  process.env.CORS_ORIGIN || 'http://localhost:3000';
 app.use(
   cors({
-    origin: 'http://localhost:3000', // URL Next.js frontend Anda
+    origin: corsOrigin,
     credentials: true,
   })
 );

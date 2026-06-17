@@ -165,20 +165,65 @@ tkdn-evaluator/
 - XSS protection (React default)
 - CORS enabled dengan whitelist
 
-## 📦 Deployment ke BMKG
+## 📦 Deployment ke server PSIMKG (sub-path `/p3dn`)
 
-Untuk deploy ke server BMKG, baca panduan lengkap di [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md).
+Aplikasi dapat dilayani dari **`https://psimkg.bmkg.go.id/p3dn/`** sebagai service terpisah
+dari portal Node (port 3001). Folder deploy: `/var/www/p3dn`.
 
-**Quick steps:**
+### Environment frontend (`.env`)
 
 ```bash
-# 1. Package project
-./package-for-bmkg.sh
-
-# 2. Transfer file ke server BMKG
-# 3. Setup environment dan database
-# 4. Deploy dengan PM2 + Nginx
+cp .env.example .env
 ```
+
+```env
+NEXT_PUBLIC_BASE_PATH=/p3dn
+NEXT_PUBLIC_API_URL=https://psimkg.bmkg.go.id/p3dn-api/api
+PORT=3002
+```
+
+> `NEXT_PUBLIC_BASE_PATH` harus diset **sebelum** `npm run build`.
+
+### Environment backend (`backend/.env`)
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Sesuaikan kredensial PostgreSQL dan:
+
+```env
+CORS_ORIGIN=https://psimkg.bmkg.go.id/p3dn
+PORT=8000
+```
+
+### Build & service
+
+```bash
+npm ci
+cd backend && npm ci && cd ..
+export NEXT_PUBLIC_BASE_PATH=/p3dn
+npm run build
+
+# Frontend: port 3002
+PORT=3002 npm run start
+
+# Backend (terminal/service terpisah): port 8000
+cd backend && node server.js
+```
+
+### Apache (contoh reverse-proxy)
+
+```apache
+ProxyPass        /p3dn     http://127.0.0.1:3002/p3dn
+ProxyPassReverse /p3dn     http://127.0.0.1:3002/p3dn
+ProxyPass        /p3dn-api http://127.0.0.1:8000
+ProxyPassReverse /p3dn-api http://127.0.0.1:8000
+```
+
+Atur `NEXT_PUBLIC_API_URL=https://psimkg.bmkg.go.id/p3dn-api/api` lalu **build ulang** frontend.
+
+Panduan lengkap legacy: [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)
 
 ## 🤝 Contributing
 
@@ -195,9 +240,3 @@ Open Source - digunakan untuk keperluan BMKG
 
 - **BMKG** - Badan Meteorologi, Klimatologi, dan Geofisika
 - Regulasi: Perpres 16/2018, PP 29/2018, Permenperin 35/2025
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

@@ -48,7 +48,9 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Call backend API
-      const response = await fetch('http://localhost:8000/api/auth/login', {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +93,9 @@ export const AuthProvider = ({ children }) => {
   const register = async (formData) => {
     try {
       // Call backend API
-      const response = await fetch('http://localhost:8000/api/auth/register', {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiUrl}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

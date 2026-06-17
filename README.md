@@ -1,203 +1,242 @@
-# 🏛️ TKDN Evaluator - BMKG
+# Portal P3DN BMKG (PSIMKG)
 
-Aplikasi evaluasi **Tingkat Komponen Dalam Negeri (TKDN)** untuk Badan Meteorologi, Klimatologi, dan Geofisika (BMKG).
+Aplikasi **P3DN — Peningkatan Penggunaan Produk Dalam Negeri / TKDN (Tingkat
+Komponen Dalam Negeri)** untuk lingkungan **PSIMKG (Pusat Standardisasi
+Instrumen MKG) — BMKG**.
 
-Sistem ini membantu mengelola pengajuan, evaluasi, dan monitoring dokumen TKDN sesuai dengan regulasi Perpres 16/2018 dan PP 29/2018.
+Portal ini dipasang sebagai aplikasi **standalone** yang dilayani dari sub-path
+portal utama: **https://psimkg.bmkg.go.id/p3dn/** (terpisah dari aplikasi Node
+portal). Tampilan header/footer dibuat **konsisten** dengan portal PSIMKG.
 
-## ✨ Fitur
+---
 
-- 🔐 **Autentikasi**: Login dengan role User dan Admin
-- 📝 **Pengajuan TKDN**: Form lengkap dengan upload dokumen PDF
-- 📊 **Dashboard**: Overview evaluasi untuk User dan Admin
-- 🔍 **Review System**: Admin dapat mereview dan approve/reject pengajuan
-- 📜 **History**: Tracking status evaluasi dengan timeline
-- 📄 **Document Management**: Preview dan download dokumen PDF
-- 🎯 **Auto Calculation**: Perhitungan TKDN otomatis berdasarkan formula
+## 1. Stack & Arsitektur
 
-## 🛠️ Teknologi
+| Lapisan       | Teknologi                                                            |
+| ------------- | ------------------------------------------------------------------- |
+| Framework     | **Next.js 16** (App Router) + **React 19**                          |
+| Styling       | **Tailwind CSS v4** (self-host, tanpa Google Fonts eksternal)       |
+| Ikon          | `lucide-react` (di-bundle, bukan dari CDN)                          |
+| Database      | **PostgreSQL** (driver `pg`, query berparameter)                    |
+| Akses data    | Server Components + Route Handlers (`app/api/*`) — satu service     |
+| Sub-path      | `basePath` dari env (`NEXT_PUBLIC_BASE_PATH=/p3dn`)                  |
 
-### Frontend
+Aplikasi berjalan sebagai **satu service Next.js** (mis. port 3002 di produksi)
+yang membaca database PostgreSQL langsung — cocok dengan pola deploy
+"reverse-proxy Apache → port aplikasi".
 
-- **Next.js 15.1.3** (App Router)
-- **React 19** with Hooks
-- **TailwindCSS** untuk styling
-- **Lucide React** untuk icons
+### Fitur portal (publik)
 
-### Backend
+1. **Pengumuman PBJ** — daftar + detail (`/pengumuman`, `/pengumuman/[slug]`), pencarian & filter kategori.
+2. **Dashboard / Statistik** — `/statistik`: ringkasan angka + grafik realisasi TKDN, paket, nilai PDN vs impor.
+3. **Dokumen & Regulasi** — `/dokumen`: SOP, peraturan, panduan, formulir (unduh/lihat), filter jenis.
+4. **Data / Inventaris BMN** — `/bmn`: tabel BMN dengan pencarian & filter kategori/kondisi.
+5. **Tautan Sistem Eksternal** — `/tautan`: SPSE/LPSE, e-katalog, SIMAK-BMN, dll. (buka tab baru).
 
-- **Node.js + Express**
-- **PostgreSQL** database
-- **JWT** authentication
-- **bcrypt** password hashing
+> **Catatan modul evaluator TKDN (opsional).** Repo ini juga memuat modul
+> internal "TKDN Evaluator" (alur pengajuan/evaluasi terproteksi login pada
+> `/login`, `/home`, `/evaluate`, `/dashboard`, `/history`, `/admin`, `/info`).
+> Modul ini memakai backend Express terpisah di folder `backend/` (lihat
+> `backend/`), dan **tidak diperlukan** untuk menjalankan portal publik P3DN.
 
-## 📋 Prerequisites
+---
 
-- Node.js 18+ (LTS)
+## 2. Struktur Folder
+
+```
+p3dn/
+├── app/
+│   ├── layout.js                # Root layout (font system-ui, tanpa Google Fonts)
+│   ├── globals.css              # Tailwind + palet warna PSIMKG
+│   ├── (portal)/                # PORTAL PUBLIK P3DN (SSR, tanpa login)
+│   │   ├── layout.js            # PortalHeader + PortalFooter
+│   │   ├── page.js              # Beranda P3DN
+│   │   ├── pengumuman/          # Daftar + detail PBJ
+│   │   ├── statistik/           # Dashboard statistik
+│   │   ├── dokumen/             # Dokumen & regulasi
+│   │   ├── bmn/                 # Inventaris BMN
+│   │   └── tautan/              # Tautan eksternal
+│   ├── api/                     # Route handlers JSON (pengumuman, statistik, dokumen, bmn, tautan)
+│   └── (home|login|admin|...)/  # Modul evaluator TKDN (auth, opsional)
+├── components/portal/           # PortalHeader, PortalFooter, PageHeader
+├── lib/
+│   ├── db.js                    # Connection pool PostgreSQL (dari .env)
+│   ├── portal-data.js           # Query data portal (parameterized)
+│   ├── format.js                # Format Rupiah/tanggal/persen (locale id-ID)
+│   └── base-path.js             # Helper withBasePath() untuk aset /public
+├── db/
+│   ├── migrations/001_p3dn_portal.sql   # Skema tabel portal
+│   └── seed.sql                          # Data contoh
+├── scripts/db-migrate.mjs / db-seed.mjs  # Runner migrasi & seed
+├── public/                      # Aset self-host (logo-bmkg.svg, dokumen PDF, dll.)
+├── .env.example                 # Template environment
+└── next.config.ts               # basePath dari NEXT_PUBLIC_BASE_PATH
+```
+
+---
+
+## 3. Prasyarat
+
+- Node.js 20+ (LTS)
 - PostgreSQL 14+
-- npm atau yarn
+- npm
 
-## 🚀 Cara Menjalankan (Development)
+---
 
-### 1. Clone Repository
-
-```bash
-git clone <repository-url>
-cd tkdn-evaluator
-```
-
-### 2. Setup Environment Variables
-
-**Frontend (.env.local):**
+## 4. Setup Database
 
 ```bash
-cp .env.example .env.local
-```
+# 1) Buat role & database (sesuaikan password)
+sudo -u postgres psql -c "CREATE ROLE p3dn LOGIN PASSWORD 'password_aman';"
+sudo -u postgres psql -c "CREATE DATABASE bmkg_p3dn OWNER p3dn;"
 
-**Backend (backend/.env):**
+# 2) Salin & isi environment
+cp .env.example .env.local      # untuk dev (atau .env untuk produksi)
+#   set DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
-```bash
-cp backend/.env.example backend/.env
-# Edit backend/.env dan sesuaikan dengan config database Anda
-```
-
-### 3. Setup Database
-
-```bash
-# Login ke PostgreSQL
-psql -U postgres
-
-# Buat database
-CREATE DATABASE bmkg_p3dn;
-
-# Jalankan migrations
-psql -U postgres -d bmkg_p3dn -f backend/migrations/001_create_tables.sql
-psql -U postgres -d bmkg_p3dn -f backend/migrations/002_create_users_table.sql
-```
-
-### 4. Install Dependencies
-
-```bash
-# Install frontend dependencies
+# 3) Jalankan migrasi + seed
 npm install
+npm run db:setup                # = db:migrate && db:seed
+```
 
-# Install backend dependencies
-cd backend
+Perintah terpisah jika diperlukan:
+
+```bash
+npm run db:migrate              # buat/ubah skema dari db/migrations/*.sql
+npm run db:seed                 # isi data contoh dari db/seed.sql
+```
+
+Atau langsung via psql:
+
+```bash
+psql -U p3dn -d bmkg_p3dn -f db/migrations/001_p3dn_portal.sql
+psql -U p3dn -d bmkg_p3dn -f db/seed.sql
+```
+
+---
+
+## 5. Menjalankan (Development)
+
+```bash
 npm install
-cd ..
-```
-
-### 5. Jalankan Development Server
-
-**Gunakan script otomatis (REKOMENDASI):**
-
-```bash
-./start-servers.sh
-```
-
-**Atau manual:**
-
-```bash
-# Terminal 1 - Backend
-cd backend
-node server.js
-
-# Terminal 2 - Frontend
 npm run dev
+# Akses: http://localhost:3000  (base path kosong saat dev)
 ```
 
-**Akses aplikasi:**
+API JSON tersedia di, mis. `http://localhost:3000/api/statistik`.
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
+---
 
-### 6. Login
-
-**Admin:**
-
-- Email: `admin@bmkg.go.id`
-- Password: `admin123`
-
-**User:**
-
-- Email: `jonathan@bmkg.go.id`
-- Password: `jonathan123`
-
-## 📁 Struktur Project
-
-```
-tkdn-evaluator/
-├── app/                    # Next.js pages (App Router)
-│   ├── admin/             # Admin pages
-│   ├── dashboard/         # User dashboard
-│   ├── evaluate/          # Form evaluasi
-│   ├── history/           # History page
-│   ├── login/             # Login page
-│   └── api/               # API routes (optional)
-├── backend/
-│   ├── server.js          # Express server
-│   ├── migrations/        # Database migrations
-│   └── src/
-│       ├── config/        # Database config
-│       ├── controllers/   # Business logic
-│       ├── middleware/    # Auth middleware
-│       ├── routes/        # API routes
-│       └── utils/         # Utilities
-├── components/            # React components
-├── lib/                   # Frontend utilities
-├── public/               # Static files
-│   └── documents/        # Template documents
-├── .env.example          # Environment template
-├── SERVER-GUIDE.md       # Panduan server management
-├── DEPLOYMENT-GUIDE.md   # Panduan deployment
-└── package.json
-```
-
-## 📚 Dokumentasi
-
-- **[SERVER-GUIDE.md](SERVER-GUIDE.md)** - Cara menjalankan dan stop server
-- **[DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)** - Panduan deployment ke production
-
-## 🔐 Security
-
-- Password di-hash menggunakan bcrypt (10 rounds)
-- JWT untuk authentication
-- SQL injection protected (parameterized queries)
-- XSS protection (React default)
-- CORS enabled dengan whitelist
-
-## 📦 Deployment ke BMKG
-
-Untuk deploy ke server BMKG, baca panduan lengkap di [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md).
-
-**Quick steps:**
+## 6. Build & Run (Produksi)
 
 ```bash
-# 1. Package project
-./package-for-bmkg.sh
-
-# 2. Transfer file ke server BMKG
-# 3. Setup environment dan database
-# 4. Deploy dengan PM2 + Nginx
+# Set base path agar aplikasi sadar sub-path /p3dn
+export NEXT_PUBLIC_BASE_PATH=/p3dn
+npm ci
+npm run build
+PORT=3002 NEXT_PUBLIC_BASE_PATH=/p3dn npm run start
+# Akses internal: http://127.0.0.1:3002/p3dn/
 ```
 
-## 🤝 Contributing
+> **Penting:** `NEXT_PUBLIC_BASE_PATH` di-bake saat `build`. Pastikan variabel
+> sudah di-set **sebelum** `npm run build`, bukan hanya saat `start`.
 
-Project ini dibuat untuk magang di BMKG. Untuk kontribusi atau pertanyaan:
+---
 
-- Developer: Jonathan Alvarado
-- Email: jonathan@bmkg.go.id
+## 7. Deploy ke `/var/www/p3dn` (sub-path portal PSIMKG)
 
-## 📄 License
+Pola deploy: **service Next.js (systemd) + reverse-proxy Apache** ke port 3002.
+Konfigurasi Apache final dikerjakan di sisi portal/server; aplikasi sudah siap.
 
-Open Source - digunakan untuk keperluan BMKG
+### a. Tempatkan kode & build
 
-## 🙏 Credits
+```bash
+sudo mkdir -p /var/www/p3dn
+sudo rsync -a --exclude node_modules --exclude .next ./ /var/www/p3dn/
+cd /var/www/p3dn
+cp .env.example .env            # isi kredensial DB + NEXT_PUBLIC_BASE_PATH=/p3dn
+npm ci
+npm run db:setup                # sekali saat instalasi awal
+npm run build
+```
 
-- **BMKG** - Badan Meteorologi, Klimatologi, dan Geofisika
-- Regulasi: Perpres 16/2018, PP 29/2018, Permenperin 35/2025
+### b. systemd service (port 3002, BUKAN 3001 milik portal)
 
-## Deploy on Vercel
+`/etc/systemd/system/p3dn.service`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```ini
+[Unit]
+Description=Portal P3DN BMKG (Next.js)
+After=network.target postgresql.service
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[Service]
+WorkingDirectory=/var/www/p3dn
+Environment=NODE_ENV=production
+Environment=PORT=3002
+Environment=NEXT_PUBLIC_BASE_PATH=/p3dn
+EnvironmentFile=/var/www/p3dn/.env
+ExecStart=/usr/bin/npm run start
+Restart=always
+User=www-data
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now p3dn
+```
+
+### c. Reverse-proxy Apache (dikerjakan di sisi portal)
+
+Contoh arahan yang perlu ditambahkan portal pada vhost PSIMKG (dikecualikan dari
+proxy Node portal & dari CSP yang relevan):
+
+```apache
+# /p3dn dilayani oleh service Next.js di port 3002
+ProxyPass        /p3dn http://127.0.0.1:3002/p3dn
+ProxyPassReverse /p3dn http://127.0.0.1:3002/p3dn
+```
+
+> TLS / redirect HTTP→HTTPS **tidak** ditangani aplikasi (sudah di lapis
+> Cloudflare/Apache portal).
+
+---
+
+## 8. Konfigurasi Sub-path & URL Relatif
+
+- `NEXT_PUBLIC_BASE_PATH=/p3dn` membuat Next.js otomatis memberi prefiks pada
+  seluruh `<Link>`, router, dan aset `_next/*`.
+- Referensi langsung ke file `/public` (mis. logo) memakai helper
+  `withBasePath()` dari `lib/base-path.js` agar tetap relatif terhadap `/p3dn`.
+- Tidak ada path absolut yang di-hardcode mulai dari `/`.
+
+---
+
+## 9. Keamanan (audit CSIRT BMKG)
+
+- **Self-host** seluruh aset (CSS/JS/ikon/font). Font memakai stack `system-ui`
+  (tanpa Google Fonts eksternal). Logo berupa SVG lokal di `public/`.
+- Kredensial DB hanya dari `.env` (masuk `.gitignore`); tidak ada secret di UI/repo.
+- Query database **berparameter** (`$1, $2, …`) → mencegah SQL injection.
+- Output di-escape otomatis oleh React → mitigasi XSS.
+- Aplikasi **tidak** memasang redirect HTTP→HTTPS (ditangani lapis portal).
+
+---
+
+## 10. Variabel Environment
+
+Lihat `.env.example`. Ringkasan:
+
+| Variabel               | Keterangan                                            |
+| ---------------------- | ----------------------------------------------------- |
+| `NEXT_PUBLIC_BASE_PATH`| Sub-path aplikasi, mis. `/p3dn` (kosong saat dev)     |
+| `APP_URL`              | URL publik aplikasi (dokumentasi/metadata)            |
+| `DB_HOST` `DB_PORT`    | Host & port PostgreSQL                                |
+| `DB_NAME`              | Nama database (mis. `bmkg_p3dn`)                       |
+| `DB_USER` `DB_PASSWORD`| Kredensial database                                   |
+| `DATABASE_URL`         | Alternatif: satu connection string (diutamakan)       |
+| `DB_SSL`               | `true` untuk koneksi SSL                               |
+| `PORT`                 | Port service (produksi: `3002`)                       |
+```

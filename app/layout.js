@@ -1,19 +1,16 @@
 import './globals.css';
-import { Geist } from 'next/font/google';
 import ClientLayout from '../components/ClientLayout';
 
-const geist = Geist({ subsets: ['latin'] });
-
 export const metadata = {
-  title: 'TKDN Evaluator - Sistem Evaluasi Tingkat Komponen Dalam Negeri',
+  title: 'P3DN BMKG — Peningkatan Penggunaan Produk Dalam Negeri | PSIMKG',
   description:
-    'Aplikasi untuk mengevaluasi TKDN produk sesuai peraturan pemerintah Indonesia',
+    'Portal P3DN (Peningkatan Penggunaan Produk Dalam Negeri / TKDN) Pusat Standardisasi Instrumen MKG — BMKG. Informasi pengadaan, statistik, dokumen & regulasi, serta data BMN.',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="id">
-      <body className={geist.className}>
+      <body>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

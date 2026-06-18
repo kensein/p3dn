@@ -1,4 +1,5 @@
 // Script to reset admin password
+import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import pool from './src/config/database.js';
 

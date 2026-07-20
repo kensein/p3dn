@@ -72,7 +72,39 @@ CREATE DATABASE bmkg_p3dn;
 # Jalankan migrations
 psql -U postgres -d bmkg_p3dn -f backend/migrations/001_create_tables.sql
 psql -U postgres -d bmkg_p3dn -f backend/migrations/002_create_users_table.sql
+psql -U postgres -d bmkg_p3dn -f backend/migrations/003_add_justification_review_columns.sql
+psql -U postgres -d bmkg_p3dn -f backend/migrations/004_password_reset_tokens.sql
 ```
+
+### 3b. Email (Gmail) untuk Forgot Password
+
+Aplikasi mengirim tautan reset password lewat SMTP Gmail.
+
+**Yang harus Anda lakukan dulu di akun Google:**
+
+1. Buka [Google Account → Security](https://myaccount.google.com/security)
+2. Aktifkan **2-Step Verification** (wajib)
+3. Buka [App passwords](https://myaccount.google.com/apppasswords)
+4. Buat App Password baru (pilih app: Mail / Other → "P3DN")
+5. Salin password 16 karakter (contoh: `abcd efgh ijkl mnop`)
+
+**Isi di `backend/.env`:**
+
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=huseinnurrahmat@gmail.com
+SMTP_PASS=abcd efgh ijkl mnop
+SMTP_FROM="Sistem P3DN BMKG <huseinnurrahmat@gmail.com>"
+FRONTEND_URL=https://psimkg.bmkg.go.id/p3dn
+CORS_ORIGIN=https://psimkg.bmkg.go.id/p3dn
+```
+
+> Jangan pakai password login Gmail biasa — hanya **App Password**.
+
+Halaman terkait:
+- `/forgot-password` — minta tautan reset
+- `/reset-password?token=...` — set password baru (dari email)
 
 ### 4. Install Dependencies
 

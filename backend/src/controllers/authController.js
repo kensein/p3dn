@@ -1,7 +1,9 @@
 // controllers/authController.js
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/database.js';
+import { sendPasswordResetEmail } from '../utils/email.js';
 
 // REGISTER
 export const register = async (req, res) => {
@@ -215,6 +217,166 @@ export const getProfile = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan server',
+    });
+  }
+};
+
+// FORGOT PASSWORD — kirim tautan reset ke email
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email wajib diisi',
+      });
+    }
+
+    // Selalu balas pesan generik agar email yang tidak terdaftar tidak terbocor.
+    const genericMessage =
+      'Jika email terdaftar, tautan reset password telah dikirim. Periksa kotak masuk / spam.';
+
+    const result = await pool.query(
+      'SELECT id, email, full_name, is_active FROM users WHERE LOWER(email) = LOWER($1)',
+      [email.trim()]
+    );
+
+    if (result.rows.length === 0 || !result.rows[0].is_active) {
+      return res.json({ success: true, message: genericMessage });
+    }
+
+    const user = result.rows[0];
+
+    // Invalidasi token lama yang belum dipakai
+    await pool.query(
+      'UPDATE password_reset_tokens SET used_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND used_at IS NULL',
+      [user.id]
+    );
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 jam
+
+    await pool.query(
+      `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [user.id, tokenHash, expiresAt]
+    );
+
+    const frontendBase = (
+      process.env.FRONTEND_URL ||
+      process.env.CORS_ORIGIN ||
+      'http://localhost:3000'
+    ).replace(/\/$/, '');
+    const resetUrl = `${frontendBase}/reset-password?token=${rawToken}`;
+
+    try {
+      await sendPasswordResetEmail({
+        to: user.email,
+        resetUrl,
+        fullName: user.full_name,
+      });
+    } catch (mailErr) {
+      console.error('Gagal kirim email reset:', mailErr.message);
+      return res.status(500).json({
+        success: false,
+        message:
+          'Gagal mengirim email. Pastikan SMTP (Gmail App Password) sudah dikonfigurasi.',
+      });
+    }
+
+    return res.json({ success: true, message: genericMessage });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server',
+      error: error.message,
+    });
+  }
+};
+
+// RESET PASSWORD — set password baru memakai token dari email
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token dan password baru wajib diisi',
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password minimal 6 karakter',
+      });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const tokenResult = await pool.query(
+      `SELECT id, user_id, expires_at, used_at
+       FROM password_reset_tokens
+       WHERE token_hash = $1
+       LIMIT 1`,
+      [tokenHash]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tautan reset tidak valid atau sudah kadaluarsa',
+      });
+    }
+
+    const row = tokenResult.rows[0];
+
+    if (row.used_at) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tautan reset sudah digunakan',
+      });
+    }
+
+    if (new Date(row.expires_at) < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tautan reset sudah kadaluarsa. Silakan minta ulang.',
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await pool.query('UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [
+      hashedPassword,
+      row.user_id,
+    ]);
+
+    await pool.query(
+      'UPDATE password_reset_tokens SET used_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [row.id]
+    );
+
+    // Invalidate remaining unused tokens for this user
+    await pool.query(
+      'UPDATE password_reset_tokens SET used_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND used_at IS NULL',
+      [row.user_id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Password berhasil diubah. Silakan login dengan password baru.',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server',
+      error: error.message,
     });
   }
 };

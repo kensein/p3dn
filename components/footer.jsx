@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FileText, Mail, MapPin } from 'lucide-react';
 import PDFModal from './PDFModal';
+import { withBasePath } from '../lib/base-path';
 
 export default function Footer() {
   const [pdfModal, setPdfModal] = useState({
@@ -49,7 +50,7 @@ export default function Footer() {
                   <button
                     onClick={() =>
                       openPDF(
-                        '/documents/pp-29-2018.pdf',
+                        withBasePath('/documents/pp-29-2018.pdf'),
                         'PP No. 29 Tahun 2018'
                       )
                     }
@@ -62,7 +63,7 @@ export default function Footer() {
                   <button
                     onClick={() =>
                       openPDF(
-                        '/documents/permenperin-35-2025.pdf',
+                        withBasePath('/documents/permenperin-35-2025.pdf'),
                         'Permenperin No. 35 Tahun 2025'
                       )
                     }
@@ -75,7 +76,7 @@ export default function Footer() {
                   <button
                     onClick={() =>
                       openPDF(
-                        '/documents/perpres-16-2018.pdf',
+                        withBasePath('/documents/perpres-16-2018.pdf'),
                         'Perpres No. 16 Tahun 2018'
                       )
                     }

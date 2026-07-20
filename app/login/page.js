@@ -142,6 +142,15 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <div className="mt-4 text-center">
+            <Link
+              href="/forgot-password"
+              className="text-sm font-medium text-blue-600 hover:underline"
+            >
+              Lupa password?
+            </Link>
+          </div>
+
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
@@ -159,21 +168,6 @@ export default function LoginPage() {
           >
             Daftar Akun Baru
           </Link>
-
-          {/* Demo Accounts */}
-          <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-            <p className="text-xs text-yellow-800 font-semibold mb-2">
-              Demo Accounts:
-            </p>
-            <div className="text-xs text-yellow-700 space-y-1">
-              <p>
-                <strong>Admin:</strong> admin@bmkg.go.id / admin123
-              </p>
-              <p>
-                <strong>User:</strong> testuser@bmkg.go.id / user123
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}

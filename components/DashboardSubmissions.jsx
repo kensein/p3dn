@@ -16,6 +16,7 @@ import {
 import StatusBadge from './statusbadge';
 import PDFModal from './PDFModal';
 import { useToast } from '../hooks/useToast';
+import { withBasePath } from '../lib/base-path';
 
 export default function DashboardSubmissions({ initialSubmissions }) {
   const [submissions, setSubmissions] = useState(initialSubmissions);
@@ -64,7 +65,7 @@ export default function DashboardSubmissions({ initialSubmissions }) {
 
   const handleDownloadTemplate = () => {
     const link = document.createElement('a');
-    link.href = '/documents/template-justifikasi-import.doc';
+    link.href = withBasePath('/documents/template-justifikasi-import.doc');
     link.download = 'Template_Surat_Justifikasi_Import.doc';
     link.click();
   };

@@ -30,8 +30,7 @@ INSERT INTO users (username, email, password, full_name, nip, role)
 VALUES (
         'admin',
         'admin@bmkg.go.id',
-        '$2a$10$xQkYv5K5f0mGx7LYvN5zPe3qVQ0Z9J5YJz5Z5Z5Z5Z5Z5Z5Z5Z5Z5u',
-        -- admin123
+        '$2a$10$wWd95cetv9RH7ImRl3mmw.evJmAHlItNjOQHl4hODY5nxGFJygWSO',
         'Administrator BMKG',
         '199999999999999999',
         'admin'

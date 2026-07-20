@@ -5,21 +5,16 @@ import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext({});
 
+const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH || '').replace(/\/$/, '');
+const COOKIE_PATH = BASE_PATH || '/';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  // Ensure client-only rendering to prevent hydration mismatch
+  // Load user dari localStorage saat mount (client-only)
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Load user dari localStorage saat mount
-  useEffect(() => {
-    if (!mounted) return;
-
     const loadUser = () => {
       try {
         const savedUser = localStorage.getItem('user');
@@ -38,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     loadUser();
-  }, [mounted]);
+  }, []);
 
   // Login function
   const login = async (email, password) => {
@@ -48,7 +43,9 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Call backend API
-      const response = await fetch('http://localhost:8000/api/auth/login', {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,9 +65,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('token', token);
 
-      // Simpan ke cookie untuk middleware
-      document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`; // 24 jam
-      document.cookie = `role=${userData.role}; path=/; max-age=86400; SameSite=Lax`;
+      // Simpan ke cookie untuk middleware (path mengikuti sub-path /p3dn)
+      document.cookie = `token=${token}; path=${COOKIE_PATH}; max-age=86400; SameSite=Lax`;
+      document.cookie = `role=${userData.role}; path=${COOKIE_PATH}; max-age=86400; SameSite=Lax`;
 
       setUser(userData);
 
@@ -91,7 +88,9 @@ export const AuthProvider = ({ children }) => {
   const register = async (formData) => {
     try {
       // Call backend API
-      const response = await fetch('http://localhost:8000/api/auth/register', {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiUrl}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,8 +118,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
 
     // Hapus cookies
-    document.cookie = 'token=; path=/; max-age=0; SameSite=Lax';
-    document.cookie = 'role=; path=/; max-age=0; SameSite=Lax';
+    document.cookie = `token=; path=${COOKIE_PATH}; max-age=0; SameSite=Lax`;
+    document.cookie = `role=; path=${COOKIE_PATH}; max-age=0; SameSite=Lax`;
 
     setUser(null);
     router.push('/login');
@@ -144,17 +143,6 @@ export const AuthProvider = ({ children }) => {
     hasRole,
     isAuthenticated: !!user,
   };
-
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
-        </div>
-      </div>
-    );
-  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

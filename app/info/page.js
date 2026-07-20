@@ -11,6 +11,7 @@ import {
   Scale,
 } from 'lucide-react';
 import PDFModal from '../../components/PDFModal';
+import { withBasePath } from '../../lib/base-path';
 
 export default function InfoPage() {
   const [pdfModal, setPdfModal] = useState({
@@ -31,19 +32,19 @@ export default function InfoPage() {
       title: 'PP No. 29 Tahun 2018',
       description: 'Peraturan Pemerintah tentang Pemberdayaan Industri',
       icon: Scale,
-      pdfUrl: '/documents/pp-29-2018.pdf',
+      pdfUrl: withBasePath('/documents/pp-29-2018.pdf'),
     },
     {
       title: 'Permenperin No. 35 Tahun 2025',
       description: 'Ketentuan dan Tata Cara Sertifikasi TKDN dan BMP',
       icon: FileText,
-      pdfUrl: '/documents/permenperin-35-2025.pdf',
+      pdfUrl: withBasePath('/documents/permenperin-35-2025.pdf'),
     },
     {
       title: 'Perpres No. 16 Tahun 2018',
       description: 'Pengadaan Barang/Jasa Pemerintah',
       icon: BookOpen,
-      pdfUrl: '/documents/perpres-16-2018.pdf',
+      pdfUrl: withBasePath('/documents/perpres-16-2018.pdf'),
     },
   ];
 
